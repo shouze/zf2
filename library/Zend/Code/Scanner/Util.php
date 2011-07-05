@@ -41,14 +41,24 @@ class Util
                 __METHOD__
             ));
         }
+        
+        if ($data->namespace && !$data->uses && strlen($value) > 0 && $value{0} != '\\') {
+            $value = $data->namespace . '\\' . $value;
+            return;
+        }
+        
         if (!$data->uses || strlen($value) <= 0 || $value{0} == '\\') {
             $value = ltrim($value, '\\');
             return;
         }
         
         if ($data->namespace || $data->uses) {
-            $firstPartEnd = (strpos($value, '\\')) ?: strlen($value-1);
-            $firstPart = substr($value, 0, $firstPartEnd);
+            $firstPart = $value;
+            if (($firstPartEnd = strpos($firstPart, '\\')) !== false)  {
+                $firstPart = substr($firstPart, 0, $firstPartEnd);
+            } else {
+                $firstPartEnd = strlen($firstPart);
+            }
             if (array_key_exists($firstPart, $data->uses)) {
                 $value = substr_replace($value, $data->uses[$firstPart], 0, $firstPartEnd);
                 return;

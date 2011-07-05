@@ -155,9 +155,9 @@ class TokenArrayScanner implements Scanner
         $tokenIndex++; 
         $fastForward++;
         
-        $hasAs                       = false;
-        $sCount                      = 0;
-        $info['statements'][$sCount] = $statementTemplate;
+        $hasAs     = false;
+        $sCount    = 0;
+        $statement = $statementTemplate;
 
         while (true) {
             $tokenIndex++;
@@ -176,9 +176,9 @@ class TokenArrayScanner implements Scanner
                 
                 if ($token[0] == T_NS_SEPARATOR || $token[0] == T_STRING) {
                     if ($hasAs == false) {
-                        $info['statements'][$sCount]['use'] .= (is_string($token)) ? $token : $token[1];
+                        $statement['use'] .= (is_string($token)) ? $token : $token[1];
                     } else {
-                        $info['statements'][$sCount]['as'] = $token[1]; // always a string
+                        $statement['as'] = $token[1]; // always a string
                     }
                 }
                 if ($token[0] == T_AS) {
@@ -186,15 +186,18 @@ class TokenArrayScanner implements Scanner
                 }
             }
             
-            if (is_string($token) && $token == ',') {
+            $tokenLookahead = $this->tokens[$tokenIndex+1];
+            
+            if (is_string($tokenLookahead) && ($tokenLookahead == ',' || $tokenLookahead == ';')) {
                 if (!$hasAs) {
                     $statement['asComputed'] = substr(
-                        $info['statements'][$sCount]['use'],
-                        (strrpos($info['statements'][$sCount]['use'],'\\')+1)
+                        $statement['use'],
+                        (strpos($statement['use'],'\\') ? (strrpos($statement['use'],'\\')+1) : 0)
                     );
                 }
+                $info['statements'][$sCount] = $statement;
                 $sCount++;
-                $info['statements'][$sCount] = $statementTemplate;
+                $statement = $statementTemplate;
                 $hasAs = false;
             }
             
@@ -381,8 +384,8 @@ class TokenArrayScanner implements Scanner
         if (!$returnScannerClass) {
             $namespaces = array();
             foreach ($this->infos as $info) {
-                if ($info['type'] == 'namespace') {
-                    $namespaces[] = $info['namespace'];
+                if ($info['type'] == 'uses') {
+                    $namespaces[] = $info['uses'];
                 }
             }
             return $namespaces;

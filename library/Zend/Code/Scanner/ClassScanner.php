@@ -35,6 +35,10 @@ class ClassScanner implements Scanner
     
     protected function scan()
     {
+        if ($this->isScanned) {
+            return;
+        }
+        
         if (!$this->tokens) {
             throw new Exception\RuntimeException('No tokens were provided');
         }
@@ -136,11 +140,11 @@ class ClassScanner implements Scanner
                         $this->shortInterfaces[$interfaceIndex] .= $token[1];
                     }
                 }
-                if ($token[0] == T_EXTENDS) {
+                if ($token[0] == T_EXTENDS && !$this->isInterface) {
                     $context = T_EXTENDS;
                     $this->shortParentClass = '';
                 }
-                if ($token[0] == T_IMPLEMENTS) {
+                if ($token[0] == T_IMPLEMENTS || ($this->isInterface && $token[0] == T_EXTENDS)) {
                     $context = T_IMPLEMENTS;
                     $this->shortInterfaces[$interfaceIndex] = '';
                 }
@@ -220,6 +224,9 @@ class ClassScanner implements Scanner
         while (true) {
             $fastForward++;
             $tokenIndex++;
+            if (!isset($this->tokens[$tokenIndex])) {
+                break;
+            }
             $token = $this->tokens[$tokenIndex];
             
             // BREAK ON
@@ -435,6 +442,7 @@ class ClassScanner implements Scanner
         
         $m = new $returnScannerClass(
             array_slice($this->tokens, $info['tokenStart'], $info['tokenEnd'] - $info['tokenStart'] + 1),
+            $this->namespace,
             $this->uses
             );
         $m->setClass($this->name);

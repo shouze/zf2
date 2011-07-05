@@ -20,11 +20,13 @@ class ParameterScanner
     protected $isPassedByReference      = false;
 
     protected $tokens                   = null;
+    protected $namespace                = null;
     protected $uses                     = array();
     
-    public function __construct(array $parameterTokens, array $uses = array())
+    public function __construct(array $parameterTokens, $namespace = null, array $uses = array())
     {
         $this->tokens = $parameterTokens;
+        $this->namespace = $namespace;
         $this->uses   = $uses;
     }
     
@@ -72,7 +74,19 @@ class ParameterScanner
             }
         }
         
-        if ($this->class) {
+        if (strtolower($this->class) == 'array') {
+            $this->isArray = true;
+            $this->class = null;
+        } elseif ($this->class !== null) {
+            
+            $data = (object) array(
+                'namespace' => $this->namespace,
+                'uses'      => $this->uses,
+            );
+            
+            Util::resolveImports($this->class, null, $data);
+            
+            /*
             $namespace = (($decClassLastSlash = strrpos($this->declaringClass, '\\')) !== false) 
                        ? substr($this->declaringClass, 0, $decClassLastSlash) 
                        : null;
@@ -89,6 +103,7 @@ class ParameterScanner
                     }
                 }
             }
+            */
         }
         
         if ($token[0] == T_WHITESPACE) {
@@ -149,12 +164,14 @@ class ParameterScanner
         } while ($token);
         
         if ($this->class) {
+            /*
             $uses = $this->uses;
             if ($this->shortInterfaces) {
                 $this->interfaces = $this->shortInterfaces;
                 $data = (object) array('namespace' => $namespace, 'uses' => $uses);
                 array_walk($this->interfaces, array('Zend\Code\Scanner\Util', 'resolveImports'), $data);
             }
+            */
         }
         
         $this->isScanned = true;
